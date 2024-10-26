@@ -1,0 +1,514 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <!-- Include Bootstrap CSS and Font Awesome CSS -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anatomical Model Viewer</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    
+    <!-- Updated Font Awesome CSS -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" crossorigin="anonymous">
+    
+    <style>
+        /* Styles for the viewer and controls */
+        #api-frame {
+            width: 100%;
+            height: 100vh;
+            border: 0;
+        }
+
+        .overlay-controls {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .cycle-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            background: #4CAF50; /* Default to normal state color */
+            color: white;
+            transition: background 0.3s ease, transform 0.2s;
+            min-width: 200px;
+            position: relative;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cycle-button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .cycle-button:active {
+            transform: translateY(0);
+        }
+
+        .cycle-button::after {
+            content: attr(data-state);
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            white-space: nowrap;
+            background: rgba(0, 0, 0, 0.75);
+            padding: 4px 10px;
+            border-radius: 4px;
+            color: #fff;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .cycle-button:hover::after {
+            opacity: 1;
+        }
+
+        /* State-specific styles */
+        .state-normal {
+            background: #4CAF50;
+        }
+
+        .state-transparent {
+            background: #2196F3;
+        }
+
+        .state-hidden {
+            background: #f44336;
+        }
+
+        /* Slider Styles */
+        .transparency-slider {
+            width: 100%;
+            margin-top: 10px;
+            display: none; /* Hidden by default */
+        }
+
+        .slider-container {
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .slider-label {
+            color: white;
+            margin-right: 10px;
+            min-width: 50px;
+        }
+
+        /* SVG Icon Styles */
+        .button-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+        }
+
+        .button-icon path {
+            stroke: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid p-0">
+        <iframe
+            id="api-frame"
+            src="https://sketchfab.com/models/20366a17f8b14adbb7b645c57cbf45d9/embed"
+            allow="autoplay; fullscreen; xr-spatial-tracking"
+            allowfullscreen
+            mozallowfullscreen="true"
+            webkitallowfullscreen="true">
+        </iframe>
+        <div class="overlay-controls">
+            <!-- Colon Control -->
+            <div id="colonControl">
+                <button id="colonButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('colon')" aria-label="Toggle Colon State">
+                    <i class="fas fa-digest mr-2"></i> Colon
+                </button>
+                <div class="slider-container">
+                    <span class="slider-label">Opacity:</span>
+                    <input type="range" id="colonSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('colon', this.value)">
+                </div>
+            </div>
+
+            <!-- Mesentery Control -->
+            <div id="mesenteryControl">
+                <button id="mesenteryButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('mesentery')" aria-label="Toggle Mesentery State">
+                    <i class="fas fa-stream mr-2"></i> Mesentery
+                </button>
+                <div class="slider-container">
+                    <span class="slider-label">Opacity:</span>
+                    <input type="range" id="mesenterySlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('mesentery', this.value)">
+                </div>
+            </div>
+
+            <!-- Parietal Peritoneum Control -->
+            <div id="fasciaControl">
+                <button id="fasciaButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('fascia')" aria-label="Toggle Parietal Peritoneum State">
+                    <i class="fas fa-layer-group mr-2"></i> Parietal Peritoneum
+                </button>
+                <div class="slider-container">
+                    <span class="slider-label">Opacity:</span>
+                    <input type="range" id="fasciaSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('fascia', this.value)">
+                </div>
+            </div>
+
+            <!-- Arteries Control -->
+            <div id="arteriesControl">
+                <button id="arteriesButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('arteries')" aria-label="Toggle Arteries State">
+                    <i class="fas fa-tint mr-2"></i> Arteries
+                </button>
+                <div class="slider-container">
+                    <span class="slider-label">Opacity:</span>
+                    <input type="range" id="arteriesSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('arteries', this.value)">
+                </div>
+            </div>
+
+            <!-- Veins Control -->
+            <div id="veinsControl">
+                <button id="veinsButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('veins')" aria-label="Toggle Portal Veins State">
+                    <i class="fas fa-vial mr-2"></i> Portal Veins
+                </button>
+                <div class="slider-container">
+                    <span class="slider-label">Opacity:</span>
+                    <input type="range" id="veinsSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('veins', this.value)">
+                </div>
+            </div>
+
+            <!-- Stomach Control -->
+            <div id="stomachControl">
+                <button id="stomachButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('stomach')" aria-label="Toggle Stomach State">
+                    <!-- Insert SVG Icon Here -->
+                    <svg class="button-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 430 430">
+                        <g stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="18">
+                            <path stroke="currentColor" d="M166.8 55v58.3c0 8.2 6.7 14.9 14.9 14.9H208"/>
+                            <path stroke="currentColor" d="M129.1 55v62.2c0 27 21.9 48.9 48.9 48.9h27.4"/>
+                            <path stroke="currentColor" d="M208 128.1c8.2-27.2 32.9-46.9 62.8-46.9 27.1 0 50.4 16.1 60.9 39.2 0 .1 1.3 3.1 1.3 3.1 7.9 19 12.2 39.9 12 61.8-.6 87.6-71.3 158-159 158-18 0-35.4-3-51.5-8.5-5.2-1.8-10.7 2.1-10.7 7.7v32.4"/>
+                            <path stroke="currentColor" d="M85 374.8V307c0-16.1 11.6-28.1 25.7-34.2l29.3-12.7c53.6-24.3 63.8-69 65.3-94"/>
+                            <path stroke="#08a88a" d="M314.6 166.7s8 48-16 80"/>
+                        </g>
+                    </svg>
+                    Stomach
+                </button>
+                <div class="slider-container">
+                    <span class="slider-label">Opacity:</span>
+                    <input type="range" id="stomachSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('stomach', this.value)">
+                </div>
+            </div>
+
+            <!-- Pancreas Control -->
+            <div id="pancreasControl">
+                <button id="pancreasButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('pancreas')" aria-label="Toggle Pancreas State">
+                    <i class="fas fa-prescription-bottle mr-2"></i> Pancreas
+                </button>
+                <div class="slider-container">
+                    <span class="slider-label">Opacity:</span>
+                    <input type="range" id="pancreasSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('pancreas', this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include Sketchfab Viewer API -->
+    <script type="text/javascript" src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script>
+
+    <script type="text/javascript">
+        // (JavaScript code remains the same as the previous version, ensuring that all functionalities are intact.)
+        // Ensure the full JavaScript code from the previous script is included here.
+    </script>
+</body>
+</html>
+
+
+    <!-- Include Sketchfab Viewer API -->
+    <script type="text/javascript" src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script>
+
+    <script type="text/javascript">
+        let iframe = document.getElementById('api-frame');
+        let client = new Sketchfab(iframe);
+        let api = null;
+
+        let materials = {
+            colon: { materials: [], originalStates: [], currentState: 'normal', opacity: 30 },
+            mesentery: { materials: [], originalStates: [], currentState: 'normal', opacity: 30 },
+            fascia: { materials: [], originalStates: [], currentState: 'normal', opacity: 30 },
+            arteries: { materials: [], originalStates: [], currentState: 'normal', opacity: 30 },
+            veins: { materials: [], originalStates: [], currentState: 'normal', opacity: 30 },
+            stomach: { materials: [], originalStates: [], currentState: 'normal', opacity: 30 },
+            pancreas: { materials: [], originalStates: [], currentState: 'normal', opacity: 30 }
+        };
+
+        let nodes = {
+            colon: { ids: [] },
+            mesentery: { ids: [] },
+            fascia: { ids: [] },
+            arteries: { ids: [] },
+            veins: { ids: [] },
+            stomach: { ids: [] },
+            pancreas: { ids: [] }
+        };
+
+        const states = ['normal', 'transparent', 'hidden'];
+
+        client.init('20366a17f8b14adbb7b645c57cbf45d9', {
+            success: function onSuccess(apiInstance) {
+                api = apiInstance;
+                api.start();
+                api.addEventListener('viewerready', function() {
+                    console.log('Viewer is ready');
+
+                    // Get materials
+                    api.getMaterialList(function(err, materialList) {
+                        if (err) {
+                            console.log('Error getting materials:', err);
+                            return;
+                        }
+
+                        // Map materials
+                        mapMaterials(materialList);
+
+                        // Get node IDs
+                        api.getNodeMap(function(err, nodesMap) {
+                            if (err) {
+                                console.log('Error getting node map:', err);
+                                return;
+                            }
+
+                            // Map nodes
+                            mapNodes(nodesMap);
+                        });
+                    });
+                });
+            },
+            error: function onError() {
+                console.log('Viewer error');
+            }
+        });
+
+        function mapMaterials(materialList) {
+            materials.colon.materials = materialList.filter(material => 
+                material.name && material.name.toUpperCase().includes('COLON'));
+            materials.mesentery.materials = materialList.filter(material => 
+                material.name && material.name.toUpperCase().includes('MESENTERY'));
+            materials.fascia.materials = materialList.filter(material => 
+                material.name && material.name.toUpperCase().includes('PARIETAL_PERITONEAL_FASCIA'));
+            materials.arteries.materials = materialList.filter(material => 
+                material.name && (
+                    material.name.toUpperCase().includes('ARTERIES1_2') || 
+                    material.name.toUpperCase().includes('ARTERIES1_3') ||
+                    material.name.toUpperCase().includes('ART_SMALL_INTERNALS') // Included here
+                ));
+            materials.veins.materials = materialList.filter(material => 
+                material.name && (
+                    material.name.toUpperCase().includes('PORTAL_VEINS1_4') || 
+                    material.name.toUpperCase().includes('PORTAL_VEINS1_5_INNER')
+                ));
+            materials.stomach.materials = materialList.filter(material => 
+                material.name && material.name.toUpperCase().includes('STOMACH'));
+            materials.pancreas.materials = materialList.filter(material => 
+                material.name && material.name.toUpperCase().includes('PANCREAS'));
+
+            // Store original states (store entire material)
+            for (let key in materials) {
+                if (materials[key].materials.length > 0) {
+                    materials[key].originalStates = materials[key].materials.map(mat => JSON.parse(JSON.stringify(mat)));
+                    console.log(`Found ${materials[key].materials.length} ${key} materials:`, materials[key].materials);
+                } else {
+                    console.log(`${key} materials not found`);
+                }
+            }
+        }
+
+        function mapNodes(nodesMap) {
+            nodes.colon.ids = findNodeIdsByName('COLON', nodesMap);
+            nodes.mesentery.ids = findNodeIdsByName('MESENTERY', nodesMap);
+            nodes.fascia.ids = findNodeIdsByName('PARIETAL_PERITONEAL_FASCIA', nodesMap);
+            nodes.arteries.ids = findNodeIdsByName(['ARTERIES1_2', 'ARTERIES1_3', 'ART_SMALL_INTERNALS'], nodesMap);
+            nodes.veins.ids = findNodeIdsByName(['PORTAL_VEINS1_4', 'PORTAL_VEINS1_5_INNER'], nodesMap);
+            nodes.stomach.ids = findNodeIdsByName('STOMACH', nodesMap);
+            nodes.pancreas.ids = findNodeIdsByName('PANCREAS', nodesMap);
+        }
+
+        function findNodeIdsByName(names, nodesMap) {
+            let ids = [];
+            let searchNames = Array.isArray(names) ? names : [names];
+
+            function traverseNodes(node) {
+                if (node.name) {
+                    let nodeName = node.name.toUpperCase();
+                    if (searchNames.some(name => nodeName.includes(name.toUpperCase()))) {
+                        ids.push(node.instanceID);
+                    }
+                }
+                if (node.children && node.children.length > 0) {
+                    node.children.forEach(childID => {
+                        let childNode = nodesMap[childID];
+                        if (childNode) {
+                            traverseNodes(childNode);
+                        }
+                    });
+                }
+            }
+
+            for (let nodeId in nodesMap) {
+                let node = nodesMap[nodeId];
+                if (node) {
+                    traverseNodes(node);
+                }
+            }
+
+            return ids;
+        }
+
+        function updateButtonState(elementId, state) {
+            const button = document.getElementById(`${elementId}Button`);
+            button.className = `cycle-button state-${state} mb-1`;
+            button.setAttribute('data-state', state.charAt(0).toUpperCase() + state.slice(1));
+        }
+
+        function cycleState(elementType) {
+            if (!api || materials[elementType].materials.length === 0) return;
+
+            const currentIndex = states.indexOf(materials[elementType].currentState);
+            const nextIndex = (currentIndex + 1) % states.length;
+            const nextState = states[nextIndex];
+
+            setMaterialState(elementType, nextState);
+            materials[elementType].currentState = nextState;
+            updateButtonState(elementType, nextState);
+        }
+
+        function setMaterialState(elementType, state) {
+            const elementMaterials = materials[elementType].materials;
+            const originalStates = materials[elementType].originalStates;
+            const nodeIds = nodes[elementType].ids;
+            const slider = document.getElementById(`${elementType}Slider`);
+
+            switch(state) {
+                case 'normal':
+                    // Hide the slider
+                    if (slider) slider.style.display = 'none';
+
+                    // Restore original material state
+                    elementMaterials.forEach((material, index) => {
+                        const originalMaterial = JSON.parse(JSON.stringify(originalStates[index]));
+                        materials[elementType].materials[index] = originalMaterial; // Replace material reference
+                        api.setMaterial(originalMaterial, function() {
+                            console.log(`Restored ${elementType} material to normal state.`);
+                        });
+                    });
+
+                    // Show the nodes
+                    if (nodeIds.length > 0) {
+                        nodeIds.forEach(nodeId => {
+                            api.show(nodeId, function(err) {
+                                if (err) {
+                                    console.log(`Error showing ${elementType}:`, err);
+                                } else {
+                                    console.log(`Shown ${elementType} node.`);
+                                }
+                            });
+                        });
+                    }
+                    break;
+
+                case 'transparent':
+                    // Show the slider
+                    if (slider) slider.style.display = 'block';
+
+                    // Apply transparent material
+                    applyTransparentMaterial(elementType, materials[elementType].opacity);
+
+                    // Show the nodes
+                    if (nodeIds.length > 0) {
+                        nodeIds.forEach(nodeId => {
+                            api.show(nodeId, function(err) {
+                                if (err) {
+                                    console.log(`Error showing ${elementType}:`, err);
+                                } else {
+                                    console.log(`Shown ${elementType} node.`);
+                                }
+                            });
+                        });
+                    }
+                    break;
+
+                case 'hidden':
+                    // Hide the slider
+                    if (slider) slider.style.display = 'none';
+
+                    // Hide the nodes
+                    if (nodeIds.length > 0) {
+                        nodeIds.forEach(nodeId => {
+                            api.hide(nodeId, function(err) {
+                                if (err) {
+                                    console.log(`Error hiding ${elementType}:`, err);
+                                } else {
+                                    console.log(`Hidden ${elementType} node.`);
+                                }
+                            });
+                        });
+                    }
+                    break;
+            }
+        }
+
+        function applyTransparentMaterial(elementType, opacityValue) {
+            const elementMaterials = materials[elementType].materials;
+            const opacityFactor = opacityValue / 100; // Convert to 0.0 - 1.0 range
+
+            elementMaterials.forEach(material => {
+                material.channels.Opacity = material.channels.Opacity || {};
+                material.channels.Opacity.enable = true;
+                material.channels.Opacity.factor = opacityFactor;
+                material.channels.Opacity.texture = null;
+                material.channels.Opacity.mode = 'BLEND';
+                material.channels.Opacity.ior = 0.0;
+                material.channels.Opacity.refractive = true;
+
+                material.channels.AlbedoPBR = material.channels.AlbedoPBR || {};
+                material.channels.AlbedoPBR.enable = true;
+                material.channels.AlbedoPBR.factor = 0.5;
+
+                material.channels.RoughnessPBR = material.channels.RoughnessPBR || {};
+                material.channels.RoughnessPBR.enable = true;
+                material.channels.RoughnessPBR.factor = 0.1;
+
+                material.channels.MetalnessPBR = material.channels.MetalnessPBR || {};
+                material.channels.MetalnessPBR.enable = true;
+                material.channels.MetalnessPBR.factor = 0.0;
+
+                material.channels.SubsurfaceScattering = {
+                    enable: false
+                };
+
+                material.transparent = true; // Enable transparency
+
+                api.setMaterial(material, function() {
+                    console.log(`Updated ${elementType} material transparency to ${opacityFactor}`);
+                });
+            });
+        }
+
+        function adjustTransparency(elementType, value) {
+            materials[elementType].opacity = value;
+            applyTransparentMaterial(elementType, value);
+        }
+    </script>
+</body>
+</html>
