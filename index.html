@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anatomical Model Viewer</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" crossorigin="anonymous">
@@ -10,7 +10,6 @@
     <style>
         * {
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
         }
 
         html, body {
@@ -18,16 +17,23 @@
             padding: 0;
             overflow: hidden;
             height: 100%;
-            /* Safe area support for notched phones */
-            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            height: 100dvh;
+        }
+
+        .viewer-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
         }
 
         #api-frame {
             width: 100%;
-            height: 100vh;
-            height: 100dvh;
+            flex: 1;
             border: 0;
             display: block;
+            min-height: 0;
         }
 
         /* ===== Desktop: Right-side overlay panel ===== */
@@ -47,11 +53,6 @@
             -webkit-backdrop-filter: blur(8px);
         }
 
-        /* Toggle button — hidden on desktop */
-        .controls-toggle {
-            display: none;
-        }
-
         .cycle-button {
             padding: 10px 20px;
             border: none;
@@ -67,9 +68,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            touch-action: manipulation;
-            user-select: none;
-            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .cycle-button:hover {
@@ -165,93 +164,73 @@
             stroke: white;
         }
 
-        .button-text {
-            white-space: nowrap;
+        /* Mobile expand/collapse toggle — hidden on desktop */
+        .mobile-toggle {
+            display: none;
         }
 
-        /* ===== Mobile: Bottom drawer ===== */
+        /* ===== Mobile & Tablet: Bottom bar ===== */
         @media (max-width: 768px) {
             .overlay-controls {
-                position: fixed;
-                right: 0;
-                left: 0;
+                position: relative;
+                right: auto;
                 top: auto;
-                bottom: 0;
-                transform: translateY(calc(100% - 0px));
+                transform: none;
+                border-radius: 0;
+                padding: 10px;
+                padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+                gap: 6px;
                 flex-direction: column;
-                gap: 8px;
-                padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
-                border-radius: 16px 16px 0 0;
-                background: rgba(0, 0, 0, 0.7);
-                backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px);
-                max-height: 55vh;
+                flex-shrink: 0;
+                max-height: 45vh;
                 overflow-y: auto;
                 -webkit-overflow-scrolling: touch;
-                transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-                will-change: transform;
             }
 
-            .overlay-controls.drawer-open {
-                transform: translateY(0);
-            }
-
-            .overlay-controls.drawer-closed {
-                transform: translateY(100%);
-            }
-
-            /* Drag handle at top of drawer */
-            .overlay-controls::before {
-                content: '';
-                display: block;
-                width: 36px;
-                height: 4px;
-                background: rgba(255, 255, 255, 0.4);
-                border-radius: 2px;
-                margin: 0 auto 10px;
-                flex-shrink: 0;
-            }
-
-            /* Floating toggle button */
-            .controls-toggle {
+            /* Show the expand/collapse toggle */
+            .mobile-toggle {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                position: fixed;
-                bottom: calc(16px + env(safe-area-inset-bottom));
-                right: 16px;
-                z-index: 1001;
-                width: 52px;
-                height: 52px;
-                border-radius: 50%;
+                width: 100%;
+                padding: 6px;
                 border: none;
-                background: rgba(0, 0, 0, 0.65);
-                backdrop-filter: blur(8px);
-                -webkit-backdrop-filter: blur(8px);
+                background: rgba(255, 255, 255, 0.15);
                 color: white;
-                font-size: 22px;
+                font-size: 13px;
+                font-weight: 600;
+                border-radius: 6px;
                 cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
                 touch-action: manipulation;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-                transition: opacity 0.25s, transform 0.25s;
+                flex-shrink: 0;
             }
 
-            .controls-toggle:active {
-                transform: scale(0.9);
+            .mobile-toggle:active {
+                background: rgba(255, 255, 255, 0.25);
             }
 
-            .controls-toggle.hidden {
-                opacity: 0;
-                pointer-events: none;
-                transform: scale(0.8);
+            .mobile-toggle .toggle-icon {
+                margin-left: 6px;
+                transition: transform 0.25s;
             }
 
-            /* Button grid: 2 columns on mobile */
+            .mobile-toggle.collapsed .toggle-icon {
+                transform: rotate(180deg);
+            }
+
+            /* Controls grid: 2-column layout */
             .controls-grid {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                gap: 8px;
+                gap: 6px;
                 width: 100%;
+                overflow: hidden;
+                transition: grid-template-rows 0.3s ease;
+            }
+
+            .controls-grid.collapsed {
+                display: none;
             }
 
             .control-item {
@@ -261,42 +240,51 @@
             .cycle-button {
                 min-width: 0;
                 width: 100%;
-                padding: 10px 8px;
+                padding: 8px 10px;
                 font-size: 13px;
-                border-radius: 8px;
+                border-radius: 6px;
                 min-height: 44px;
                 justify-content: flex-start;
             }
 
-            .cycle-button i,
+            .cycle-button i {
+                margin-right: 5px;
+            }
+
             .cycle-button .button-icon {
                 margin-right: 5px;
             }
 
+            /* Hide hover tooltips on mobile */
             .cycle-button::after {
                 display: none;
             }
 
             .slider-label {
-                min-width: 42px;
+                min-width: 40px;
                 font-size: 11px;
             }
 
+            /* Larger slider thumbs for touch */
             .transparency-slider::-webkit-slider-thumb {
-                width: 26px;
-                height: 26px;
+                width: 28px;
+                height: 28px;
             }
 
             .transparency-slider::-moz-range-thumb {
-                width: 26px;
-                height: 26px;
+                width: 28px;
+                height: 28px;
             }
         }
 
-        /* ===== Small phones ===== */
-        @media (max-width: 380px) {
+        /* ===== Small phones: single column ===== */
+        @media (max-width: 400px) {
             .controls-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .overlay-controls {
+                max-height: 50vh;
             }
 
             .cycle-button {
@@ -308,7 +296,7 @@
 </head>
 
 <body>
-    <div class="container-fluid p-0">
+    <div class="viewer-wrapper">
         <iframe
             id="api-frame"
             src="https://sketchfab.com/models/20366a17f8b14adbb7b645c57cbf45d9/embed"
@@ -318,17 +306,17 @@
             webkitallowfullscreen="true">
         </iframe>
 
-        <!-- Floating toggle button for mobile -->
-        <button class="controls-toggle" id="controlsToggle" aria-label="Toggle Controls">
-            <i class="fas fa-sliders-h"></i>
-        </button>
+        <div class="overlay-controls" id="overlayControls">
+            <!-- Mobile expand/collapse toggle -->
+            <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Controls">
+                Anatomy Controls <i class="fas fa-chevron-down toggle-icon"></i>
+            </button>
 
-        <div class="overlay-controls drawer-closed" id="overlayControls">
-            <div class="controls-grid">
+            <div class="controls-grid" id="controlsGrid">
                 <!-- Colon Control -->
                 <div class="control-item" id="colonControl">
                     <button id="colonButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('colon')" aria-label="Toggle Colon State">
-                        <i class="fas fa-digest mr-2"></i> <span class="button-text">Colon</span>
+                        <i class="fas fa-digest mr-2"></i> Colon
                     </button>
                     <div class="slider-container">
                         <span class="slider-label">Opacity:</span>
@@ -339,7 +327,7 @@
                 <!-- Mesentery Control -->
                 <div class="control-item" id="mesenteryControl">
                     <button id="mesenteryButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('mesentery')" aria-label="Toggle Mesentery State">
-                        <i class="fas fa-stream mr-2"></i> <span class="button-text">Mesentery</span>
+                        <i class="fas fa-stream mr-2"></i> Mesentery
                     </button>
                     <div class="slider-container">
                         <span class="slider-label">Opacity:</span>
@@ -350,7 +338,7 @@
                 <!-- Parietal Peritoneum Control -->
                 <div class="control-item" id="fasciaControl">
                     <button id="fasciaButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('fascia')" aria-label="Toggle Parietal Peritoneum State">
-                        <i class="fas fa-layer-group mr-2"></i> <span class="button-text">Peritoneum</span>
+                        <i class="fas fa-layer-group mr-2"></i> Peritoneum
                     </button>
                     <div class="slider-container">
                         <span class="slider-label">Opacity:</span>
@@ -361,7 +349,7 @@
                 <!-- Arteries Control -->
                 <div class="control-item" id="arteriesControl">
                     <button id="arteriesButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('arteries')" aria-label="Toggle Arteries State">
-                        <i class="fas fa-tint mr-2"></i> <span class="button-text">Arteries</span>
+                        <i class="fas fa-tint mr-2"></i> Arteries
                     </button>
                     <div class="slider-container">
                         <span class="slider-label">Opacity:</span>
@@ -372,7 +360,7 @@
                 <!-- Veins Control -->
                 <div class="control-item" id="veinsControl">
                     <button id="veinsButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('veins')" aria-label="Toggle Portal Veins State">
-                        <i class="fas fa-vial mr-2"></i> <span class="button-text">Portal Veins</span>
+                        <i class="fas fa-vial mr-2"></i> Portal Veins
                     </button>
                     <div class="slider-container">
                         <span class="slider-label">Opacity:</span>
@@ -392,7 +380,7 @@
                                 <path stroke="#08a88a" d="M314.6 166.7s8 48-16 80"/>
                             </g>
                         </svg>
-                        <span class="button-text">Stomach</span>
+                        Stomach
                     </button>
                     <div class="slider-container">
                         <span class="slider-label">Opacity:</span>
@@ -403,7 +391,7 @@
                 <!-- Pancreas Control -->
                 <div class="control-item" id="pancreasControl">
                     <button id="pancreasButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('pancreas')" aria-label="Toggle Pancreas State">
-                        <i class="fas fa-prescription-bottle mr-2"></i> <span class="button-text">Pancreas</span>
+                        <i class="fas fa-prescription-bottle mr-2"></i> Pancreas
                     </button>
                     <div class="slider-container">
                         <span class="slider-label">Opacity:</span>
@@ -418,85 +406,14 @@
     <script type="text/javascript" src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script>
 
     <script type="text/javascript">
-        // ===== Mobile drawer logic =====
+        // ===== Mobile toggle logic =====
         (function() {
-            const toggle = document.getElementById('controlsToggle');
-            const drawer = document.getElementById('overlayControls');
-            const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
-            let startY = 0;
-            let currentY = 0;
-            let dragging = false;
+            const toggle = document.getElementById('mobileToggle');
+            const grid = document.getElementById('controlsGrid');
 
-            // Toggle drawer open/close
             toggle.addEventListener('click', function() {
-                if (drawer.classList.contains('drawer-open')) {
-                    closeDrawer();
-                } else {
-                    openDrawer();
-                }
-            });
-
-            function openDrawer() {
-                drawer.classList.remove('drawer-closed');
-                drawer.classList.add('drawer-open');
-                toggle.classList.add('hidden');
-            }
-
-            function closeDrawer() {
-                drawer.classList.remove('drawer-open');
-                drawer.classList.add('drawer-closed');
-                toggle.classList.remove('hidden');
-            }
-
-            // Swipe-down to close drawer
-            drawer.addEventListener('touchstart', function(e) {
-                if (!isMobile()) return;
-                startY = e.touches[0].clientY;
-                dragging = true;
-            }, { passive: true });
-
-            drawer.addEventListener('touchmove', function(e) {
-                if (!dragging || !isMobile()) return;
-                currentY = e.touches[0].clientY;
-                const diff = currentY - startY;
-                if (diff > 0) {
-                    drawer.style.transition = 'none';
-                    drawer.style.transform = `translateY(${diff}px)`;
-                }
-            }, { passive: true });
-
-            drawer.addEventListener('touchend', function() {
-                if (!dragging || !isMobile()) return;
-                dragging = false;
-                const diff = currentY - startY;
-                drawer.style.transition = '';
-                drawer.style.transform = '';
-                if (diff > 80) {
-                    closeDrawer();
-                } else {
-                    // Snap back open
-                    drawer.classList.add('drawer-open');
-                    drawer.classList.remove('drawer-closed');
-                }
-                startY = 0;
-                currentY = 0;
-            });
-
-            // Close drawer when tapping outside on mobile
-            document.addEventListener('click', function(e) {
-                if (!isMobile()) return;
-                if (!drawer.contains(e.target) && !toggle.contains(e.target) && drawer.classList.contains('drawer-open')) {
-                    closeDrawer();
-                }
-            });
-
-            // On resize, reset drawer state for desktop
-            window.addEventListener('resize', function() {
-                if (!isMobile()) {
-                    drawer.classList.remove('drawer-open', 'drawer-closed');
-                    drawer.style.transform = '';
-                    toggle.classList.remove('hidden');
-                }
+                const isCollapsed = grid.classList.toggle('collapsed');
+                toggle.classList.toggle('collapsed', isCollapsed);
             });
         })();
 
