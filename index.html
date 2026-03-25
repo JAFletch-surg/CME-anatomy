@@ -1,22 +1,36 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-    
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Anatomical Model Viewer</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
-    
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" crossorigin="anonymous">
-    
+
     <style>
-        
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            /* Safe area support for notched phones */
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+
         #api-frame {
             width: 100%;
             height: 100vh;
+            height: 100dvh;
             border: 0;
+            display: block;
         }
 
+        /* ===== Desktop: Right-side overlay panel ===== */
         .overlay-controls {
             position: absolute;
             right: 20px;
@@ -24,28 +38,38 @@
             transform: translateY(-50%);
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
             z-index: 1000;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.55);
             padding: 15px;
-            border-radius: 8px;
+            border-radius: 10px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        /* Toggle button — hidden on desktop */
+        .controls-toggle {
+            display: none;
         }
 
         .cycle-button {
-            padding: 12px 24px;
+            padding: 10px 20px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
-            background: #4CAF50; /* Default to normal state color */
+            background: #4CAF50;
             color: white;
-            transition: background 0.3s ease, transform 0.2s;
+            transition: background 0.3s ease, transform 0.15s;
             min-width: 200px;
             position: relative;
-            font-size: 16px;
+            font-size: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .cycle-button:hover {
@@ -54,7 +78,7 @@
         }
 
         .cycle-button:active {
-            transform: translateY(0);
+            transform: translateY(0) scale(0.97);
         }
 
         .cycle-button::after {
@@ -78,24 +102,42 @@
             opacity: 1;
         }
 
-        /* State-specific styles */
-        .state-normal {
-            background: #4CAF50;
-        }
-
-        .state-transparent {
-            background: #2196F3;
-        }
-
-        .state-hidden {
-            background: #f44336;
-        }
+        /* State colours */
+        .state-normal { background: #4CAF50; }
+        .state-transparent { background: #2196F3; }
+        .state-hidden { background: #f44336; }
 
         /* Slider Styles */
         .transparency-slider {
             width: 100%;
-            margin-top: 10px;
-            display: none; /* Hidden by default */
+            margin-top: 8px;
+            display: none;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255,255,255,0.25);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .transparency-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: 2px solid rgba(0,0,0,0.2);
+        }
+
+        .transparency-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: 2px solid rgba(0,0,0,0.2);
         }
 
         .slider-container {
@@ -106,19 +148,161 @@
 
         .slider-label {
             color: white;
-            margin-right: 10px;
+            margin-right: 8px;
             min-width: 50px;
+            font-size: 13px;
         }
 
         /* SVG Icon Styles */
         .button-icon {
-            width: 24px;
-            height: 24px;
-            margin-right: 8px;
+            width: 22px;
+            height: 22px;
+            margin-right: 6px;
+            flex-shrink: 0;
         }
 
         .button-icon path {
             stroke: white;
+        }
+
+        .button-text {
+            white-space: nowrap;
+        }
+
+        /* ===== Mobile: Bottom drawer ===== */
+        @media (max-width: 768px) {
+            .overlay-controls {
+                position: fixed;
+                right: 0;
+                left: 0;
+                top: auto;
+                bottom: 0;
+                transform: translateY(calc(100% - 0px));
+                flex-direction: column;
+                gap: 8px;
+                padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+                border-radius: 16px 16px 0 0;
+                background: rgba(0, 0, 0, 0.7);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                max-height: 55vh;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+                will-change: transform;
+            }
+
+            .overlay-controls.drawer-open {
+                transform: translateY(0);
+            }
+
+            .overlay-controls.drawer-closed {
+                transform: translateY(100%);
+            }
+
+            /* Drag handle at top of drawer */
+            .overlay-controls::before {
+                content: '';
+                display: block;
+                width: 36px;
+                height: 4px;
+                background: rgba(255, 255, 255, 0.4);
+                border-radius: 2px;
+                margin: 0 auto 10px;
+                flex-shrink: 0;
+            }
+
+            /* Floating toggle button */
+            .controls-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: fixed;
+                bottom: calc(16px + env(safe-area-inset-bottom));
+                right: 16px;
+                z-index: 1001;
+                width: 52px;
+                height: 52px;
+                border-radius: 50%;
+                border: none;
+                background: rgba(0, 0, 0, 0.65);
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+                color: white;
+                font-size: 22px;
+                cursor: pointer;
+                touch-action: manipulation;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                transition: opacity 0.25s, transform 0.25s;
+            }
+
+            .controls-toggle:active {
+                transform: scale(0.9);
+            }
+
+            .controls-toggle.hidden {
+                opacity: 0;
+                pointer-events: none;
+                transform: scale(0.8);
+            }
+
+            /* Button grid: 2 columns on mobile */
+            .controls-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                width: 100%;
+            }
+
+            .control-item {
+                width: 100%;
+            }
+
+            .cycle-button {
+                min-width: 0;
+                width: 100%;
+                padding: 10px 8px;
+                font-size: 13px;
+                border-radius: 8px;
+                min-height: 44px;
+                justify-content: flex-start;
+            }
+
+            .cycle-button i,
+            .cycle-button .button-icon {
+                margin-right: 5px;
+            }
+
+            .cycle-button::after {
+                display: none;
+            }
+
+            .slider-label {
+                min-width: 42px;
+                font-size: 11px;
+            }
+
+            .transparency-slider::-webkit-slider-thumb {
+                width: 26px;
+                height: 26px;
+            }
+
+            .transparency-slider::-moz-range-thumb {
+                width: 26px;
+                height: 26px;
+            }
+        }
+
+        /* ===== Small phones ===== */
+        @media (max-width: 380px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cycle-button {
+                font-size: 14px;
+                padding: 10px 12px;
+            }
         }
     </style>
 </head>
@@ -133,91 +317,98 @@
             mozallowfullscreen="true"
             webkitallowfullscreen="true">
         </iframe>
-        <div class="overlay-controls">
-            <!-- Colon Control -->
-            <div id="colonControl">
-                <button id="colonButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('colon')" aria-label="Toggle Colon State">
-                    <i class="fas fa-digest mr-2"></i> Colon
-                </button>
-                <div class="slider-container">
-                    <span class="slider-label">Opacity:</span>
-                    <input type="range" id="colonSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('colon', this.value)">
-                </div>
-            </div>
 
-            <!-- Mesentery Control -->
-            <div id="mesenteryControl">
-                <button id="mesenteryButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('mesentery')" aria-label="Toggle Mesentery State">
-                    <i class="fas fa-stream mr-2"></i> Mesentery
-                </button>
-                <div class="slider-container">
-                    <span class="slider-label">Opacity:</span>
-                    <input type="range" id="mesenterySlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('mesentery', this.value)">
-                </div>
-            </div>
+        <!-- Floating toggle button for mobile -->
+        <button class="controls-toggle" id="controlsToggle" aria-label="Toggle Controls">
+            <i class="fas fa-sliders-h"></i>
+        </button>
 
-            <!-- Parietal Peritoneum Control -->
-            <div id="fasciaControl">
-                <button id="fasciaButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('fascia')" aria-label="Toggle Parietal Peritoneum State">
-                    <i class="fas fa-layer-group mr-2"></i> Parietal Peritoneum
-                </button>
-                <div class="slider-container">
-                    <span class="slider-label">Opacity:</span>
-                    <input type="range" id="fasciaSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('fascia', this.value)">
+        <div class="overlay-controls drawer-closed" id="overlayControls">
+            <div class="controls-grid">
+                <!-- Colon Control -->
+                <div class="control-item" id="colonControl">
+                    <button id="colonButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('colon')" aria-label="Toggle Colon State">
+                        <i class="fas fa-digest mr-2"></i> <span class="button-text">Colon</span>
+                    </button>
+                    <div class="slider-container">
+                        <span class="slider-label">Opacity:</span>
+                        <input type="range" id="colonSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('colon', this.value)">
+                    </div>
                 </div>
-            </div>
 
-            <!-- Arteries Control -->
-            <div id="arteriesControl">
-                <button id="arteriesButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('arteries')" aria-label="Toggle Arteries State">
-                    <i class="fas fa-tint mr-2"></i> Arteries
-                </button>
-                <div class="slider-container">
-                    <span class="slider-label">Opacity:</span>
-                    <input type="range" id="arteriesSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('arteries', this.value)">
+                <!-- Mesentery Control -->
+                <div class="control-item" id="mesenteryControl">
+                    <button id="mesenteryButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('mesentery')" aria-label="Toggle Mesentery State">
+                        <i class="fas fa-stream mr-2"></i> <span class="button-text">Mesentery</span>
+                    </button>
+                    <div class="slider-container">
+                        <span class="slider-label">Opacity:</span>
+                        <input type="range" id="mesenterySlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('mesentery', this.value)">
+                    </div>
                 </div>
-            </div>
 
-            <!-- Veins Control -->
-            <div id="veinsControl">
-                <button id="veinsButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('veins')" aria-label="Toggle Portal Veins State">
-                    <i class="fas fa-vial mr-2"></i> Portal Veins
-                </button>
-                <div class="slider-container">
-                    <span class="slider-label">Opacity:</span>
-                    <input type="range" id="veinsSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('veins', this.value)">
+                <!-- Parietal Peritoneum Control -->
+                <div class="control-item" id="fasciaControl">
+                    <button id="fasciaButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('fascia')" aria-label="Toggle Parietal Peritoneum State">
+                        <i class="fas fa-layer-group mr-2"></i> <span class="button-text">Peritoneum</span>
+                    </button>
+                    <div class="slider-container">
+                        <span class="slider-label">Opacity:</span>
+                        <input type="range" id="fasciaSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('fascia', this.value)">
+                    </div>
                 </div>
-            </div>
 
-            <!-- Stomach Control -->
-            <div id="stomachControl">
-                <button id="stomachButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('stomach')" aria-label="Toggle Stomach State">
-                    <!-- Insert SVG Icon Here -->
-                    <svg class="button-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 430 430">
-                        <g stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="18">
-                            <path stroke="currentColor" d="M166.8 55v58.3c0 8.2 6.7 14.9 14.9 14.9H208"/>
-                            <path stroke="currentColor" d="M129.1 55v62.2c0 27 21.9 48.9 48.9 48.9h27.4"/>
-                            <path stroke="currentColor" d="M208 128.1c8.2-27.2 32.9-46.9 62.8-46.9 27.1 0 50.4 16.1 60.9 39.2 0 .1 1.3 3.1 1.3 3.1 7.9 19 12.2 39.9 12 61.8-.6 87.6-71.3 158-159 158-18 0-35.4-3-51.5-8.5-5.2-1.8-10.7 2.1-10.7 7.7v32.4"/>
-                            <path stroke="currentColor" d="M85 374.8V307c0-16.1 11.6-28.1 25.7-34.2l29.3-12.7c53.6-24.3 63.8-69 65.3-94"/>
-                            <path stroke="#08a88a" d="M314.6 166.7s8 48-16 80"/>
-                        </g>
-                    </svg>
-                    Stomach
-                </button>
-                <div class="slider-container">
-                    <span class="slider-label">Opacity:</span>
-                    <input type="range" id="stomachSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('stomach', this.value)">
+                <!-- Arteries Control -->
+                <div class="control-item" id="arteriesControl">
+                    <button id="arteriesButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('arteries')" aria-label="Toggle Arteries State">
+                        <i class="fas fa-tint mr-2"></i> <span class="button-text">Arteries</span>
+                    </button>
+                    <div class="slider-container">
+                        <span class="slider-label">Opacity:</span>
+                        <input type="range" id="arteriesSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('arteries', this.value)">
+                    </div>
                 </div>
-            </div>
 
-            <!-- Pancreas Control -->
-            <div id="pancreasControl">
-                <button id="pancreasButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('pancreas')" aria-label="Toggle Pancreas State">
-                    <i class="fas fa-prescription-bottle mr-2"></i> Pancreas
-                </button>
-                <div class="slider-container">
-                    <span class="slider-label">Opacity:</span>
-                    <input type="range" id="pancreasSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('pancreas', this.value)">
+                <!-- Veins Control -->
+                <div class="control-item" id="veinsControl">
+                    <button id="veinsButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('veins')" aria-label="Toggle Portal Veins State">
+                        <i class="fas fa-vial mr-2"></i> <span class="button-text">Portal Veins</span>
+                    </button>
+                    <div class="slider-container">
+                        <span class="slider-label">Opacity:</span>
+                        <input type="range" id="veinsSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('veins', this.value)">
+                    </div>
+                </div>
+
+                <!-- Stomach Control -->
+                <div class="control-item" id="stomachControl">
+                    <button id="stomachButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('stomach')" aria-label="Toggle Stomach State">
+                        <svg class="button-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 430 430">
+                            <g stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="18">
+                                <path stroke="currentColor" d="M166.8 55v58.3c0 8.2 6.7 14.9 14.9 14.9H208"/>
+                                <path stroke="currentColor" d="M129.1 55v62.2c0 27 21.9 48.9 48.9 48.9h27.4"/>
+                                <path stroke="currentColor" d="M208 128.1c8.2-27.2 32.9-46.9 62.8-46.9 27.1 0 50.4 16.1 60.9 39.2 0 .1 1.3 3.1 1.3 3.1 7.9 19 12.2 39.9 12 61.8-.6 87.6-71.3 158-159 158-18 0-35.4-3-51.5-8.5-5.2-1.8-10.7 2.1-10.7 7.7v32.4"/>
+                                <path stroke="currentColor" d="M85 374.8V307c0-16.1 11.6-28.1 25.7-34.2l29.3-12.7c53.6-24.3 63.8-69 65.3-94"/>
+                                <path stroke="#08a88a" d="M314.6 166.7s8 48-16 80"/>
+                            </g>
+                        </svg>
+                        <span class="button-text">Stomach</span>
+                    </button>
+                    <div class="slider-container">
+                        <span class="slider-label">Opacity:</span>
+                        <input type="range" id="stomachSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('stomach', this.value)">
+                    </div>
+                </div>
+
+                <!-- Pancreas Control -->
+                <div class="control-item" id="pancreasControl">
+                    <button id="pancreasButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('pancreas')" aria-label="Toggle Pancreas State">
+                        <i class="fas fa-prescription-bottle mr-2"></i> <span class="button-text">Pancreas</span>
+                    </button>
+                    <div class="slider-container">
+                        <span class="slider-label">Opacity:</span>
+                        <input type="range" id="pancreasSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('pancreas', this.value)">
+                    </div>
                 </div>
             </div>
         </div>
@@ -227,16 +418,89 @@
     <script type="text/javascript" src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script>
 
     <script type="text/javascript">
-        
-    </script>
-</body>
-</html>
+        // ===== Mobile drawer logic =====
+        (function() {
+            const toggle = document.getElementById('controlsToggle');
+            const drawer = document.getElementById('overlayControls');
+            const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+            let startY = 0;
+            let currentY = 0;
+            let dragging = false;
 
+            // Toggle drawer open/close
+            toggle.addEventListener('click', function() {
+                if (drawer.classList.contains('drawer-open')) {
+                    closeDrawer();
+                } else {
+                    openDrawer();
+                }
+            });
 
-    <!-- Include Sketchfab Viewer API -->
-    <script type="text/javascript" src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script>
+            function openDrawer() {
+                drawer.classList.remove('drawer-closed');
+                drawer.classList.add('drawer-open');
+                toggle.classList.add('hidden');
+            }
 
-    <script type="text/javascript">
+            function closeDrawer() {
+                drawer.classList.remove('drawer-open');
+                drawer.classList.add('drawer-closed');
+                toggle.classList.remove('hidden');
+            }
+
+            // Swipe-down to close drawer
+            drawer.addEventListener('touchstart', function(e) {
+                if (!isMobile()) return;
+                startY = e.touches[0].clientY;
+                dragging = true;
+            }, { passive: true });
+
+            drawer.addEventListener('touchmove', function(e) {
+                if (!dragging || !isMobile()) return;
+                currentY = e.touches[0].clientY;
+                const diff = currentY - startY;
+                if (diff > 0) {
+                    drawer.style.transition = 'none';
+                    drawer.style.transform = `translateY(${diff}px)`;
+                }
+            }, { passive: true });
+
+            drawer.addEventListener('touchend', function() {
+                if (!dragging || !isMobile()) return;
+                dragging = false;
+                const diff = currentY - startY;
+                drawer.style.transition = '';
+                drawer.style.transform = '';
+                if (diff > 80) {
+                    closeDrawer();
+                } else {
+                    // Snap back open
+                    drawer.classList.add('drawer-open');
+                    drawer.classList.remove('drawer-closed');
+                }
+                startY = 0;
+                currentY = 0;
+            });
+
+            // Close drawer when tapping outside on mobile
+            document.addEventListener('click', function(e) {
+                if (!isMobile()) return;
+                if (!drawer.contains(e.target) && !toggle.contains(e.target) && drawer.classList.contains('drawer-open')) {
+                    closeDrawer();
+                }
+            });
+
+            // On resize, reset drawer state for desktop
+            window.addEventListener('resize', function() {
+                if (!isMobile()) {
+                    drawer.classList.remove('drawer-open', 'drawer-closed');
+                    drawer.style.transform = '';
+                    toggle.classList.remove('hidden');
+                }
+            });
+        })();
+
+        // ===== Sketchfab Viewer Logic =====
         let iframe = document.getElementById('api-frame');
         let client = new Sketchfab(iframe);
         let api = null;
@@ -270,24 +534,19 @@
                 api.addEventListener('viewerready', function() {
                     console.log('Viewer is ready');
 
-                    // Get materials
                     api.getMaterialList(function(err, materialList) {
                         if (err) {
                             console.log('Error getting materials:', err);
                             return;
                         }
 
-                        // Map materials
                         mapMaterials(materialList);
 
-                        // Get node IDs
                         api.getNodeMap(function(err, nodesMap) {
                             if (err) {
                                 console.log('Error getting node map:', err);
                                 return;
                             }
-
-                            // Map nodes
                             mapNodes(nodesMap);
                         });
                     });
@@ -299,29 +558,28 @@
         });
 
         function mapMaterials(materialList) {
-            materials.colon.materials = materialList.filter(material => 
+            materials.colon.materials = materialList.filter(material =>
                 material.name && material.name.toUpperCase().includes('COLON'));
-            materials.mesentery.materials = materialList.filter(material => 
+            materials.mesentery.materials = materialList.filter(material =>
                 material.name && material.name.toUpperCase().includes('MESENTERY'));
-            materials.fascia.materials = materialList.filter(material => 
+            materials.fascia.materials = materialList.filter(material =>
                 material.name && material.name.toUpperCase().includes('PARIETAL_PERITONEAL_FASCIA'));
-            materials.arteries.materials = materialList.filter(material => 
+            materials.arteries.materials = materialList.filter(material =>
                 material.name && (
-                    material.name.toUpperCase().includes('ARTERIES1_2') || 
+                    material.name.toUpperCase().includes('ARTERIES1_2') ||
                     material.name.toUpperCase().includes('ARTERIES1_3') ||
-                    material.name.toUpperCase().includes('ART_SMALL_INTERNALS') // Included here
+                    material.name.toUpperCase().includes('ART_SMALL_INTERNALS')
                 ));
-            materials.veins.materials = materialList.filter(material => 
+            materials.veins.materials = materialList.filter(material =>
                 material.name && (
-                    material.name.toUpperCase().includes('PORTAL_VEINS1_4') || 
+                    material.name.toUpperCase().includes('PORTAL_VEINS1_4') ||
                     material.name.toUpperCase().includes('PORTAL_VEINS1_5_INNER')
                 ));
-            materials.stomach.materials = materialList.filter(material => 
+            materials.stomach.materials = materialList.filter(material =>
                 material.name && material.name.toUpperCase().includes('STOMACH'));
-            materials.pancreas.materials = materialList.filter(material => 
+            materials.pancreas.materials = materialList.filter(material =>
                 material.name && material.name.toUpperCase().includes('PANCREAS'));
 
-            // Store original states (store entire material)
             for (let key in materials) {
                 if (materials[key].materials.length > 0) {
                     materials[key].originalStates = materials[key].materials.map(mat => JSON.parse(JSON.stringify(mat)));
@@ -399,19 +657,16 @@
 
             switch(state) {
                 case 'normal':
-                    // Hide the slider
                     if (slider) slider.style.display = 'none';
 
-                    // Restore original material state
                     elementMaterials.forEach((material, index) => {
                         const originalMaterial = JSON.parse(JSON.stringify(originalStates[index]));
-                        materials[elementType].materials[index] = originalMaterial; // Replace material reference
+                        materials[elementType].materials[index] = originalMaterial;
                         api.setMaterial(originalMaterial, function() {
                             console.log(`Restored ${elementType} material to normal state.`);
                         });
                     });
 
-                    // Show the nodes
                     if (nodeIds.length > 0) {
                         nodeIds.forEach(nodeId => {
                             api.show(nodeId, function(err) {
@@ -426,13 +681,10 @@
                     break;
 
                 case 'transparent':
-                    // Show the slider
                     if (slider) slider.style.display = 'block';
 
-                    // Apply transparent material
                     applyTransparentMaterial(elementType, materials[elementType].opacity);
 
-                    // Show the nodes
                     if (nodeIds.length > 0) {
                         nodeIds.forEach(nodeId => {
                             api.show(nodeId, function(err) {
@@ -447,10 +699,8 @@
                     break;
 
                 case 'hidden':
-                    // Hide the slider
                     if (slider) slider.style.display = 'none';
 
-                    // Hide the nodes
                     if (nodeIds.length > 0) {
                         nodeIds.forEach(nodeId => {
                             api.hide(nodeId, function(err) {
@@ -468,7 +718,7 @@
 
         function applyTransparentMaterial(elementType, opacityValue) {
             const elementMaterials = materials[elementType].materials;
-            const opacityFactor = opacityValue / 100; // Convert to 0.0 - 1.0 range
+            const opacityFactor = opacityValue / 100;
 
             elementMaterials.forEach(material => {
                 material.channels.Opacity = material.channels.Opacity || {};
@@ -495,7 +745,7 @@
                     enable: false
                 };
 
-                material.transparent = true; // Enable transparency
+                material.transparent = true;
 
                 api.setMaterial(material, function() {
                     console.log(`Updated ${elementType} material transparency to ${opacityFactor}`);
