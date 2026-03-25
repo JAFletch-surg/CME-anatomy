@@ -30,75 +30,107 @@
 
         #api-frame {
             width: 100%;
-            flex: 1;
+            flex: 1 1 0%;
             border: 0;
             display: block;
             min-height: 0;
         }
 
-        /* ===== Desktop: Right-side overlay panel ===== */
+        /* ==============================================
+           MOBILE-FIRST: Base styles are for mobile
+           ============================================== */
+
+        /* Controls bar sits below the iframe in the flex flow */
         .overlay-controls {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 6px;
             z-index: 1000;
-            background: rgba(0, 0, 0, 0.55);
-            padding: 15px;
-            border-radius: 10px;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.75);
+            padding: 10px;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+            flex-shrink: 0;
+            max-height: 45vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
+        /* Mobile toggle button */
+        .mobile-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            flex-shrink: 0;
+        }
+
+        .mobile-toggle:active {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .mobile-toggle .toggle-icon {
+            margin-left: 8px;
+            transition: transform 0.25s;
+        }
+
+        .mobile-toggle.collapsed .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Controls grid: 2-column layout on mobile */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .controls-grid.collapsed {
+            display: none;
+        }
+
+        .control-item {
+            width: 100%;
+        }
+
+        /* Buttons — mobile base */
         .cycle-button {
-            padding: 10px 20px;
+            padding: 8px 10px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
             background: #4CAF50;
             color: white;
-            transition: background 0.3s ease, transform 0.15s;
-            min-width: 200px;
+            transition: background 0.3s ease;
+            width: 100%;
             position: relative;
-            font-size: 15px;
+            font-size: 13px;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
+            min-height: 44px;
             -webkit-tap-highlight-color: transparent;
-        }
-
-        .cycle-button:hover {
-            background: #45a049;
-            transform: translateY(-2px);
+            touch-action: manipulation;
         }
 
         .cycle-button:active {
-            transform: translateY(0) scale(0.97);
+            opacity: 0.85;
         }
 
+        /* No hover tooltips on mobile */
         .cycle-button::after {
-            content: attr(data-state);
-            position: absolute;
-            bottom: -25px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 12px;
-            white-space: nowrap;
-            background: rgba(0, 0, 0, 0.75);
-            padding: 4px 10px;
-            border-radius: 4px;
-            color: #fff;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
-
-        .cycle-button:hover::after {
-            opacity: 1;
+            display: none;
         }
 
         /* State colours */
@@ -106,11 +138,27 @@
         .state-transparent { background: #2196F3; }
         .state-hidden { background: #f44336; }
 
-        /* Slider Styles */
+        /* Slider container — hidden by default, only shown when transparent */
+        .slider-container {
+            display: none;
+            width: 100%;
+            align-items: center;
+            margin-top: 4px;
+        }
+
+        .slider-container.active {
+            display: flex;
+        }
+
+        .slider-label {
+            color: white;
+            margin-right: 8px;
+            min-width: 40px;
+            font-size: 11px;
+        }
+
         .transparency-slider {
             width: 100%;
-            margin-top: 8px;
-            display: none;
             height: 6px;
             -webkit-appearance: none;
             appearance: none;
@@ -122,8 +170,8 @@
         .transparency-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 20px;
-            height: 20px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             background: #fff;
             cursor: pointer;
@@ -131,32 +179,19 @@
         }
 
         .transparency-slider::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             background: #fff;
             cursor: pointer;
             border: 2px solid rgba(0,0,0,0.2);
         }
 
-        .slider-container {
-            width: 100%;
-            display: flex;
-            align-items: center;
-        }
-
-        .slider-label {
-            color: white;
-            margin-right: 8px;
-            min-width: 50px;
-            font-size: 13px;
-        }
-
         /* SVG Icon Styles */
         .button-icon {
-            width: 22px;
-            height: 22px;
-            margin-right: 6px;
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
             flex-shrink: 0;
         }
 
@@ -164,132 +199,111 @@
             stroke: white;
         }
 
-        /* Mobile expand/collapse toggle — hidden on desktop */
-        .mobile-toggle {
-            display: none;
-        }
-
-        /* ===== Mobile & Tablet: Bottom bar ===== */
-        @media (max-width: 768px) {
-            .overlay-controls {
-                position: relative;
-                right: auto;
-                top: auto;
-                transform: none;
-                border-radius: 0;
-                padding: 10px;
-                padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-                gap: 6px;
-                flex-direction: column;
-                flex-shrink: 0;
-                max-height: 45vh;
-                overflow-y: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-
-            /* Show the expand/collapse toggle */
-            .mobile-toggle {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 100%;
-                padding: 6px;
-                border: none;
-                background: rgba(255, 255, 255, 0.15);
-                color: white;
-                font-size: 13px;
-                font-weight: 600;
-                border-radius: 6px;
-                cursor: pointer;
-                -webkit-tap-highlight-color: transparent;
-                touch-action: manipulation;
-                flex-shrink: 0;
-            }
-
-            .mobile-toggle:active {
-                background: rgba(255, 255, 255, 0.25);
-            }
-
-            .mobile-toggle .toggle-icon {
-                margin-left: 6px;
-                transition: transform 0.25s;
-            }
-
-            .mobile-toggle.collapsed .toggle-icon {
-                transform: rotate(180deg);
-            }
-
-            /* Controls grid: 2-column layout */
-            .controls-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 6px;
-                width: 100%;
-                overflow: hidden;
-                transition: grid-template-rows 0.3s ease;
-            }
-
-            .controls-grid.collapsed {
-                display: none;
-            }
-
-            .control-item {
-                width: 100%;
-            }
-
-            .cycle-button {
-                min-width: 0;
-                width: 100%;
-                padding: 8px 10px;
-                font-size: 13px;
-                border-radius: 6px;
-                min-height: 44px;
-                justify-content: flex-start;
-            }
-
-            .cycle-button i {
-                margin-right: 5px;
-            }
-
-            .cycle-button .button-icon {
-                margin-right: 5px;
-            }
-
-            /* Hide hover tooltips on mobile */
-            .cycle-button::after {
-                display: none;
-            }
-
-            .slider-label {
-                min-width: 40px;
-                font-size: 11px;
-            }
-
-            /* Larger slider thumbs for touch */
-            .transparency-slider::-webkit-slider-thumb {
-                width: 28px;
-                height: 28px;
-            }
-
-            .transparency-slider::-moz-range-thumb {
-                width: 28px;
-                height: 28px;
-            }
-        }
-
-        /* ===== Small phones: single column ===== */
+        /* Small phones: single column */
         @media (max-width: 400px) {
             .controls-grid {
                 grid-template-columns: 1fr;
             }
 
-            .overlay-controls {
-                max-height: 50vh;
-            }
-
             .cycle-button {
                 font-size: 14px;
                 padding: 10px 12px;
+            }
+        }
+
+        /* ==============================================
+           DESKTOP: upgrade to overlay panel (min 769px)
+           ============================================== */
+        @media (min-width: 769px) {
+            .overlay-controls {
+                position: absolute;
+                right: 20px;
+                top: 50%;
+                transform: translateY(-50%);
+                gap: 12px;
+                padding: 15px;
+                border-radius: 10px;
+                background: rgba(0, 0, 0, 0.55);
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+                max-height: none;
+                overflow-y: visible;
+            }
+
+            /* Hide mobile toggle on desktop */
+            .mobile-toggle {
+                display: none;
+            }
+
+            /* Single column on desktop */
+            .controls-grid {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            /* Desktop button sizing */
+            .cycle-button {
+                padding: 10px 20px;
+                min-width: 200px;
+                font-size: 15px;
+                justify-content: center;
+                transition: background 0.3s ease, transform 0.15s;
+            }
+
+            .cycle-button:hover {
+                background: #45a049;
+                transform: translateY(-2px);
+            }
+
+            .cycle-button:active {
+                transform: translateY(0) scale(0.97);
+                opacity: 1;
+            }
+
+            /* Desktop hover tooltips */
+            .cycle-button::after {
+                display: block;
+                content: attr(data-state);
+                position: absolute;
+                bottom: -25px;
+                left: 50%;
+                transform: translateX(-50%);
+                font-size: 12px;
+                white-space: nowrap;
+                background: rgba(0, 0, 0, 0.75);
+                padding: 4px 10px;
+                border-radius: 4px;
+                color: #fff;
+                opacity: 0;
+                transition: opacity 0.3s;
+                pointer-events: none;
+            }
+
+            .cycle-button:hover::after {
+                opacity: 1;
+            }
+
+            /* Desktop slider thumb */
+            .transparency-slider::-webkit-slider-thumb {
+                width: 20px;
+                height: 20px;
+            }
+
+            .transparency-slider::-moz-range-thumb {
+                width: 20px;
+                height: 20px;
+            }
+
+            .slider-label {
+                min-width: 50px;
+                font-size: 13px;
+            }
+
+            .button-icon {
+                width: 22px;
+                height: 22px;
+                margin-right: 6px;
             }
         }
     </style>
@@ -315,10 +329,10 @@
             <div class="controls-grid" id="controlsGrid">
                 <!-- Colon Control -->
                 <div class="control-item" id="colonControl">
-                    <button id="colonButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('colon')" aria-label="Toggle Colon State">
+                    <button id="colonButton" class="cycle-button state-normal" data-state="Normal" onclick="cycleState('colon')" aria-label="Toggle Colon State">
                         <i class="fas fa-digest mr-2"></i> Colon
                     </button>
-                    <div class="slider-container">
+                    <div class="slider-container" id="colonSliderContainer">
                         <span class="slider-label">Opacity:</span>
                         <input type="range" id="colonSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('colon', this.value)">
                     </div>
@@ -326,10 +340,10 @@
 
                 <!-- Mesentery Control -->
                 <div class="control-item" id="mesenteryControl">
-                    <button id="mesenteryButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('mesentery')" aria-label="Toggle Mesentery State">
+                    <button id="mesenteryButton" class="cycle-button state-normal" data-state="Normal" onclick="cycleState('mesentery')" aria-label="Toggle Mesentery State">
                         <i class="fas fa-stream mr-2"></i> Mesentery
                     </button>
-                    <div class="slider-container">
+                    <div class="slider-container" id="mesenterySliderContainer">
                         <span class="slider-label">Opacity:</span>
                         <input type="range" id="mesenterySlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('mesentery', this.value)">
                     </div>
@@ -337,10 +351,10 @@
 
                 <!-- Parietal Peritoneum Control -->
                 <div class="control-item" id="fasciaControl">
-                    <button id="fasciaButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('fascia')" aria-label="Toggle Parietal Peritoneum State">
+                    <button id="fasciaButton" class="cycle-button state-normal" data-state="Normal" onclick="cycleState('fascia')" aria-label="Toggle Parietal Peritoneum State">
                         <i class="fas fa-layer-group mr-2"></i> Peritoneum
                     </button>
-                    <div class="slider-container">
+                    <div class="slider-container" id="fasciaSliderContainer">
                         <span class="slider-label">Opacity:</span>
                         <input type="range" id="fasciaSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('fascia', this.value)">
                     </div>
@@ -348,10 +362,10 @@
 
                 <!-- Arteries Control -->
                 <div class="control-item" id="arteriesControl">
-                    <button id="arteriesButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('arteries')" aria-label="Toggle Arteries State">
+                    <button id="arteriesButton" class="cycle-button state-normal" data-state="Normal" onclick="cycleState('arteries')" aria-label="Toggle Arteries State">
                         <i class="fas fa-tint mr-2"></i> Arteries
                     </button>
-                    <div class="slider-container">
+                    <div class="slider-container" id="arteriesSliderContainer">
                         <span class="slider-label">Opacity:</span>
                         <input type="range" id="arteriesSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('arteries', this.value)">
                     </div>
@@ -359,10 +373,10 @@
 
                 <!-- Veins Control -->
                 <div class="control-item" id="veinsControl">
-                    <button id="veinsButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('veins')" aria-label="Toggle Portal Veins State">
+                    <button id="veinsButton" class="cycle-button state-normal" data-state="Normal" onclick="cycleState('veins')" aria-label="Toggle Portal Veins State">
                         <i class="fas fa-vial mr-2"></i> Portal Veins
                     </button>
-                    <div class="slider-container">
+                    <div class="slider-container" id="veinsSliderContainer">
                         <span class="slider-label">Opacity:</span>
                         <input type="range" id="veinsSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('veins', this.value)">
                     </div>
@@ -370,7 +384,7 @@
 
                 <!-- Stomach Control -->
                 <div class="control-item" id="stomachControl">
-                    <button id="stomachButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('stomach')" aria-label="Toggle Stomach State">
+                    <button id="stomachButton" class="cycle-button state-normal" data-state="Normal" onclick="cycleState('stomach')" aria-label="Toggle Stomach State">
                         <svg class="button-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 430 430">
                             <g stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="18">
                                 <path stroke="currentColor" d="M166.8 55v58.3c0 8.2 6.7 14.9 14.9 14.9H208"/>
@@ -382,7 +396,7 @@
                         </svg>
                         Stomach
                     </button>
-                    <div class="slider-container">
+                    <div class="slider-container" id="stomachSliderContainer">
                         <span class="slider-label">Opacity:</span>
                         <input type="range" id="stomachSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('stomach', this.value)">
                     </div>
@@ -390,10 +404,10 @@
 
                 <!-- Pancreas Control -->
                 <div class="control-item" id="pancreasControl">
-                    <button id="pancreasButton" class="cycle-button state-normal mb-1" data-state="Normal" onclick="cycleState('pancreas')" aria-label="Toggle Pancreas State">
+                    <button id="pancreasButton" class="cycle-button state-normal" data-state="Normal" onclick="cycleState('pancreas')" aria-label="Toggle Pancreas State">
                         <i class="fas fa-prescription-bottle mr-2"></i> Pancreas
                     </button>
-                    <div class="slider-container">
+                    <div class="slider-container" id="pancreasSliderContainer">
                         <span class="slider-label">Opacity:</span>
                         <input type="range" id="pancreasSlider" class="transparency-slider" min="0" max="100" value="30" oninput="adjustTransparency('pancreas', this.value)">
                     </div>
@@ -550,7 +564,7 @@
 
         function updateButtonState(elementId, state) {
             const button = document.getElementById(`${elementId}Button`);
-            button.className = `cycle-button state-${state} mb-1`;
+            button.className = `cycle-button state-${state}`;
             button.setAttribute('data-state', state.charAt(0).toUpperCase() + state.slice(1));
         }
 
@@ -570,11 +584,11 @@
             const elementMaterials = materials[elementType].materials;
             const originalStates = materials[elementType].originalStates;
             const nodeIds = nodes[elementType].ids;
-            const slider = document.getElementById(`${elementType}Slider`);
+            const sliderContainer = document.getElementById(`${elementType}SliderContainer`);
 
             switch(state) {
                 case 'normal':
-                    if (slider) slider.style.display = 'none';
+                    if (sliderContainer) sliderContainer.classList.remove('active');
 
                     elementMaterials.forEach((material, index) => {
                         const originalMaterial = JSON.parse(JSON.stringify(originalStates[index]));
@@ -598,7 +612,7 @@
                     break;
 
                 case 'transparent':
-                    if (slider) slider.style.display = 'block';
+                    if (sliderContainer) sliderContainer.classList.add('active');
 
                     applyTransparentMaterial(elementType, materials[elementType].opacity);
 
@@ -616,7 +630,7 @@
                     break;
 
                 case 'hidden':
-                    if (slider) slider.style.display = 'none';
+                    if (sliderContainer) sliderContainer.classList.remove('active');
 
                     if (nodeIds.length > 0) {
                         nodeIds.forEach(nodeId => {
